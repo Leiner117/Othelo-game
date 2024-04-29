@@ -1,35 +1,53 @@
 from pyswip import Prolog
 
-# Cargar el código Prolog desde el archivo
+# Load Prolog code from the file
 prolog = Prolog()
-prolog.consult("prueba2.pl")
-def tablero_prolog(tablero):
-    # Convertir el tablero de Python a una lista de listas en Prolog
-    filas = []
-    for fila in tablero:
-        filas.append(f"[{','.join(map(str, fila))}]")
-    tablero_prolog = f"[{','.join(filas)}]"
-    return tablero_prolog
+prolog.consult("busqueda1.pl")
 
-def jugada_calculada(jugador, tablero):
-    jugadas_lista = []
+def prolog_board(board):
+    """
+    Convert the Python board to a list of lists in Prolog format.
 
-    # Convertir el tablero de Python a una lista de listas en Prolog
-    tablero_prolog_str = tablero_prolog(tablero)
+    Args:
+        board (list): The game board represented as a 2D list.
 
-    # Consultar jugadas válidas para el jugador en el tablero dado
-    result = list(prolog.query(f"jugadas_validas({jugador}, {tablero_prolog_str}, Jugadas)"))
+    Returns:
+        str: The Prolog representation of the board.
+    """
+    rows = []
+    for row in board:
+        rows.append(f"[{','.join(map(str, row))}]")
+    prolog_board = f"[{','.join(rows)}]"
+    return prolog_board
 
-    if result:
-        jugadas = result[0]["Jugadas"]
-        print("Jugadas válidas para el jugador", jugador, ":")
-        for jugada in jugadas:
-            fila = jugada.args[0] - 1
-            columna = jugada.args[1] - 1
-            jugadas_lista.append((fila, columna))
+def calculated_move(player, board):
+    """
+    Calculate the next move for the player using Prolog.
+
+    Args:
+        player (int): The player making the move (1 for black, 2 for white).
+        board (list): The game board represented as a 2D list.
+
+    Returns:
+        tuple: The coordinates of the calculated move (row, column).
+    """
+    possible_moves = []
+
+    # Convert the Python board to Prolog format
+    prolog_board_str = prolog_board(board)
+
+    # Query valid moves for the player on the given board
+    result = list(prolog.query(f"valid_moves({player}, {prolog_board_str}, Moves)"))
+    moves = result[0]["Moves"]
+    if len(moves) > 0:
         
-        # Eliminar duplicados de la lista de jugadas
-        jugadas_lista = list(set(jugadas_lista))
-    
-    return jugadas_lista
-
+        for move in moves:
+            row = move.args[0] - 1
+            column = move.args[1] - 1
+            possible_moves.append((row, column))
+        
+        # Remove duplicates from the list of moves
+        possible_moves = list(set(possible_moves))
+    else:
+        return 0
+    return possible_moves[0]
